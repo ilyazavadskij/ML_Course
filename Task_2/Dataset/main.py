@@ -14,21 +14,22 @@ data = pd.read_csv('data.csv', header=None, names=columns, nrows=lines_number)
 encoder = OneHotEncoder(categories="auto")
 
 # Применяем one-hot encoding
-user_matrix = encoder.fit_transform(np.asarray(data['user_id']).reshape(-1,1))
-film_matrix = encoder.fit_transform(np.asarray(data['film_id']).reshape(-1,1))
+user_matrix = encoder.fit_transform(np.asarray(data['user_id']).reshape(-1, 1))
+film_matrix = encoder.fit_transform(np.asarray(data['film_id']).reshape(-1, 1))
 
 # Добавляем вектор единиц и формируем матрицу
 ones = np.ones(shape=(lines_number, 1))
 X = hstack([ones, user_matrix, film_matrix]).tocsr()
-y = np.asarray(data['film_rating']).reshape(-1,1)
+y = np.asarray(data['film_rating']).reshape(-1, 1)
 
-X,y = shuffle(X,y)
+X, y = shuffle(X, y)
 
 print(X.shape)
 print(y.shape)
 
 number_of_splits = 5
 number_of_epochs = 100
+learning_rate = 1e-2
 factors_num = 2
 
 errors = [0 for _ in range(number_of_splits)]
@@ -44,7 +45,7 @@ r2s_test = [0 for _ in range(number_of_splits)]
 kf = KFold(n_splits=number_of_splits, shuffle=True)
 kf.get_n_splits(X)
 
-g_d = GradientDescent()
+g_d = GradientDescent(learning_rate=learning_rate, epochs=number_of_epochs, factors_num=2)
 
 for i, (train_index, test_index) in enumerate(kf.split(X)):
     print(f"Iteration {i}")
@@ -54,11 +55,11 @@ for i, (train_index, test_index) in enumerate(kf.split(X)):
     w_init = np.zeros((X.shape[1], 1))
     V_init = np.zeros((X.shape[1], factors_num))
 
-    results = g_d.gradient_descent(X_train, y_train, w_init, V_init, eta=0.05, max_iter=number_of_epochs)
+    results = g_d.fit(X_train, y_train)
     weights[i], factors[i], errors[i] = results
 
-    train_preds = g_d.make_prediction(X_train, weights[i], factors[i])
-    test_preds = g_d.make_prediction(X_test, weights[i], factors[i])
+    train_preds = g_d.predict(X_train)
+    test_preds = g_d.predict(X_test)
 # Performing Gradient Descent
 # for i in range(epochs):
 #     Y_pred = m*X + c  # The current predicted value of Y
